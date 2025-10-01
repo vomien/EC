@@ -99,43 +99,19 @@ def inversion_mutation(individual):
 # Genetic Algorithm
 def GA_permutation(coords, pop_size, generations, crossover_rate, mutation_rate,
                    crossover_operator="OX", mutation_operator="swap", 
-                   selection_operator="tournament", tournament_k=3, 
-                   elitism=True, early_stop=50):
-    """
-    GA giải TSP với:
-    - elitism: giữ cá thể tốt nhất
-    - early_stop: dừng nếu không cải thiện sau X thế hệ
-    """
+                   selection_operator="tournament", tournament_k=3, elitism=True):
     n = len(coords)
     D = distance_matrix(coords)
     pop = init_population(pop_size, n)
     best_historic = []
 
-    # Best toàn cục
-    best_overall = None
-    best_dist_overall = float("inf")
-    no_improve = 0
-
     for gen in range(generations):
         fitness_vals = np.array([fitness_function(ind, D) for ind in pop])
+
         best_id = np.argmax(fitness_vals)
         best_dist = 1.0 / fitness_vals[best_id]
+        best_historic.append(best_dist)
         elite = pop[best_id].copy()
-
-        # Cập nhật best toàn cục
-        if best_dist < best_dist_overall:
-            best_dist_overall = best_dist
-            best_overall = elite.copy()
-            no_improve = 0
-        else:
-            no_improve += 1
-
-        best_historic.append(best_dist_overall)
-
-        # Kiểm tra stopping criteria
-        if early_stop and no_improve >= early_stop:
-            print(f"⏹ Dừng sớm ở thế hệ {gen} (không cải thiện {early_stop} thế hệ liên tiếp).")
-            break
 
         # Selection
         if selection_operator == "roulette":
@@ -152,7 +128,7 @@ def GA_permutation(coords, pop_size, generations, crossover_rate, mutation_rate,
                 if crossover_operator == "OX":
                     child1 = order_crossover(parent1.copy(), parent2.copy())
                     child2 = order_crossover(parent2.copy(), parent1.copy())
-                else:  # PMX
+                else:  
                     child1 = pmx_crossover(parent1.copy(), parent2.copy())
                     child2 = pmx_crossover(parent2.copy(), parent1.copy())
                 offspring.extend([child1, child2])
@@ -175,26 +151,24 @@ def GA_permutation(coords, pop_size, generations, crossover_rate, mutation_rate,
 
         pop = offspring
 
-    return best_overall, best_dist_overall, best_historic
+    fitness_vals = np.array([fitness_function(ind, D) for ind in pop])
+    best_id = np.argmax(fitness_vals)
+    return pop[best_id], 1.0 / fitness_vals[best_id], best_historic
 
-# Demo chạy
 coords = read_coords("tsp.txt")
 
-print("=== Chạy GA TSP cải tiến với dừng sớm ===")
+print("=== Chạy GA TSP  ===")
 best_tour, best_dist, hist = GA_permutation(
     coords,
     pop_size=100,
-    generations=1000,       
+    generations=500,
     crossover_rate=0.9,
     mutation_rate=0.2,
     crossover_operator="PMX",       # "OX" or "PMX"
     mutation_operator="inversion",  # "swap" or "inversion"
-    selection_operator="tournament", # "tournament" or "roulette"
+    selection_operator="tournament", #"tournament" or "roulette"
     tournament_k=3,
-    elitism=True,
-    early_stop=100             # dừng nếu không cải thiện sau 100 thế hệ
+    elitism=True
 )
-
 print("Best distance:", best_dist)
 print("Best tour:", best_tour)
-
